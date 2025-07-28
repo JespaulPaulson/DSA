@@ -5,11 +5,8 @@
 
 #define MAX 100
 
-char stack[MAX];
+int stack[MAX];
 int top = -1;
-
-int intStack[MAX];
-int intTop = -1;
 
 char operators[] = "+-*/^";
 
@@ -17,7 +14,7 @@ int isEmpty() {
     return top == -1;
 }
 
-void push(char item) {
+void push(int item) {
     if (top < MAX - 1) {
         stack[++top] = item;
     } else {
@@ -25,20 +22,20 @@ void push(char item) {
     }
 }
 
-char pop() {
+int pop() {
     if (!isEmpty()) {
         return stack[top--];
     } else {
         printf("Stack Underflow\n");
-        return '\0';
+        return -1;  // Return -1 or some invalid value
     }
 }
 
-char peek() {
+int peek() {
     if (!isEmpty()) {
         return stack[top];
     }
-    return '\0';
+    return -1;  // Return -1 if empty
 }
 
 int isOperator(char ch) {
@@ -48,7 +45,7 @@ int isOperator(char ch) {
     return 0;
 }
 
-int precedence(char op) {
+int precedence(int op) {
     switch (op) {
         case '+': case '-': return 1;
         case '*': case '/': return 2;
@@ -57,13 +54,13 @@ int precedence(char op) {
     }
 }
 
-int isRightAssociative(char op) {
+int isRightAssociative(int op) {
     return op == '^';
 }
 
 void reverseString(char *str) {
     int len = strlen(str);
-    for (int i = 0, j = len - 1; i < j; i++, j--) {
+    for (int i = 0, j = len -1; i < j; i++, j--) {
         char temp = str[i];
         str[i] = str[j];
         str[j] = temp;
@@ -71,7 +68,7 @@ void reverseString(char *str) {
 }
 
 void infixToPostfix(char *infix, char *postfix) {
-    top = -1; // reset stack
+    top = -1;  // reset stack
     int j = 0;
     int len = strlen(infix);
 
@@ -84,25 +81,23 @@ void infixToPostfix(char *infix, char *postfix) {
             push(ch);
         } else if (ch == ')') {
             while (!isEmpty() && peek() != '(') {
-                postfix[j++] = pop();
+                postfix[j++] = (char)pop();
             }
             if (!isEmpty() && peek() == '(') {
-                pop(); // remove '('
+                pop();  // remove '('
             }
         } else if (isOperator(ch)) {
             while (!isEmpty() && peek() != '(' &&
                   ((precedence(peek()) > precedence(ch)) ||
                    (precedence(peek()) == precedence(ch) && !isRightAssociative(ch)))) {
-                postfix[j++] = pop();
+                postfix[j++] = (char)pop();
             }
             push(ch);
         }
     }
-
     while (!isEmpty()) {
-        postfix[j++] = pop();
+        postfix[j++] = (char)pop();
     }
-
     postfix[j] = '\0';
 }
 
@@ -112,52 +107,30 @@ void infixToPrefix(char *infix, char *prefix) {
     strcpy(revInfix, infix);
     reverseString(revInfix);
 
-    // Swap '(' and ')' after reversing
+    // Swap '(' and ')'
     for (int i = 0; i < len; i++) {
-        if (revInfix[i] == '(')
-            revInfix[i] = ')';
-        else if (revInfix[i] == ')')
-            revInfix[i] = '(';
+        if (revInfix[i] == '(') revInfix[i] = ')';
+        else if (revInfix[i] == ')') revInfix[i] = '(';
     }
 
     char postfix[MAX];
     infixToPostfix(revInfix, postfix);
-
     reverseString(postfix);
     strcpy(prefix, postfix);
 }
 
-// Integer stack operations for evaluation
-void intPush(int val) {
-    if (intTop < MAX - 1) {
-        intStack[++intTop] = val;
-    } else {
-        printf("Evaluation stack overflow\n");
-    }
-}
-
-int intPop() {
-    if (intTop >= 0) {
-        return intStack[intTop--];
-    } else {
-        printf("Evaluation stack underflow\n");
-        return 0;
-    }
-}
-
 int evaluatePostfix(char *postfix) {
-    intTop = -1;
-
+    top = -1; // reuse the same stack
     int len = strlen(postfix);
 
     for (int i = 0; i < len; i++) {
         char ch = postfix[i];
 
         if (isdigit(ch)) {
-            intPush(ch - '0');
+            push(ch - '0');  // Push integer value
         } else if (isOperator(ch)) {
-            int operand2 = intPop();
-            int operand1 = intPop();
+            int operand2 = pop();
+            int operand1 = pop();
             int result = 0;
 
             switch (ch) {
@@ -176,10 +149,10 @@ int evaluatePostfix(char *postfix) {
                     for (int j = 0; j < operand2; j++) result *= operand1;
                     break;
             }
-            intPush(result);
+            push(result);
         }
     }
-    return intPop();
+    return pop();
 }
 
 void main() {
@@ -188,7 +161,7 @@ void main() {
     printf("1. General Expression\n");
     printf("2. Number Expression\n");
     printf("Enter choice: ");
-    scanf("%d", &ch); 		
+    scanf("%d", &ch);
     printf("Enter infix expression (single-digit operands): ");
     scanf("%s", infix);
     infixToPostfix(infix, postfix);
@@ -196,10 +169,11 @@ void main() {
     infixToPrefix(infix, prefix);
     printf("Prefix: %s\n", prefix);
     if (ch == 2) {
-    	int result = evaluatePostfix(postfix);
-    	printf("Evaluation Result: %d\n", result);
+        int result = evaluatePostfix(postfix);
+        printf("Evaluation Result: %d\n", result);
     }
 }
+
 
 	 
 	 
